@@ -16,7 +16,8 @@ const server = http.createServer(app);
 // ✅ Allow the correct frontend domain
 const allowedOrigins = [
   "https://chat-app-delta-lemon.vercel.app", // Your Vercel frontend
-  "http://localhost:3000", // Allow local development
+  "http://localhost:3000",
+  "http://localhost:8081", // Allow local development
 ];
 
 // ✅ CORS Middleware (Allow PUT & DELETE)

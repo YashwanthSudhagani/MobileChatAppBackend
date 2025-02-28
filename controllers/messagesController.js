@@ -1,6 +1,7 @@
 const Messages = require("../models/messagesModel");
 const mongoose = require("mongoose");
 // const path = require("path");
+const chatURL = 'https://mobilechatappbackend.onrender.com/api';
  
  
  
@@ -195,5 +196,5 @@ module.exports.deleteMessage = async (req, res) => {
     return res.status(400).json({ error: "No file uploaded" });
   }
 
-  res.json({ audioUrl: `https://your-server.com/uploads/${req.file.filename}` });
+  res.json({ audioUrl: `${chatURL}/uploads/${req.file.filename}` });
 };
