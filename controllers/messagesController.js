@@ -1,13 +1,8 @@
 const Messages = require("../models/messagesModel");
 const mongoose = require("mongoose");
+// const path = require("path");
  
  
-const callUser = (req, res) => {
-  const { from, to, type } = req.body;
- 
-  req.io.to(to).emit("incoming-call", { from, type });
-  res.status(200).json({ success: true, message: "Call initiated" });
-};
  
 module.exports.addMessage = async (req, res) => {
   try {
@@ -55,39 +50,7 @@ module.exports.getMessages = async (req, res) => {
   }
 };
  
-// module.exports.addMessage = async (req, res) => {
-//   try {
-//     const { from, to, message } = req.body;
- 
-//     // Log the incoming message to ensure it's being received correctly
-//     console.log("Received message:", message); // Ensure emojis are included here
- 
-//     // Validate the message
-//     if (!message || message.trim() === "") {
-//       return res.status(400).json({ msg: "Message cannot be empty" });
-//     }
- 
-//     // Save the message in the database
-//     const data = await Messages.create({
-//       message: { text: message }, // Store the message text (including emojis)
-//       users: [from, to], // The two users involved in the conversation
-//       sender: from, // The sender of the message
-//     });
- 
-//     // Log the result to verify it's stored correctly
-//     console.log("Message stored:", data);
- 
-//     if (data) {
-//       return res.json({ msg: "Message added successfully." });
-//     } else {
-//       return res.status(500).json({ msg: "Failed to add message to the database" });
-//     }
-//   } catch (error) {
-//     console.error("Error adding message:", error);
-//     res.status(500).json({ msg: "Internal Server Error" });
-//   }
-// };
- 
+
 // Store a call log message
 module.exports.addCallMessage = async (req, res) => {
   try {
@@ -225,4 +188,12 @@ module.exports.deleteMessage = async (req, res) => {
     console.error("Error deleting message:", err); // ✅ Log error for debugging
     res.status(500).json({ error: "Failed to delete message", details: err.message });
   }
+};
+
+ module.exports.uploadAudio = (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  res.json({ audioUrl: `https://your-server.com/uploads/${req.file.filename}` });
 };
