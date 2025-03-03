@@ -132,6 +132,10 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on('send-voice-msg', ({ to, audioUrl }) => {
+    io.to(to).emit('receive-voice-msg', { audioUrl });
+  });
+
   // Remove disconnected user
   socket.on("disconnect", () => {
     Object.keys(users).forEach((key) => {

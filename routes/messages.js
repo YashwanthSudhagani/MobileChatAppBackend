@@ -2,24 +2,12 @@ const express = require("express");
 // const Message = require("../models/messagesModel"); 
 // const mongoose = require("mongoose"); // ✅ Correct import
 const multer = require("multer");
-const path = require("path");
 
-const { addMessage, getMessages,addCallMessage,getCallMessages,deleteMessage,updateMessage,uploadAudio } = require("../controllers/messagesController");
+
+const { addMessage, getMessages,addCallMessage,getCallMessages,deleteMessage,updateMessage,sendVoiceMessage,getVoiceMessages } = require("../controllers/messagesController");
 const router = express.Router();
  
 
-// Configure Multer Storage
-const storage = multer.diskStorage({
-    destination: "./uploads/",
-    filename: (req, file, cb) => {
-      cb(null, Date.now() + path.extname(file.originalname));
-    },
-  });
-  
-  const upload = multer({ storage });
-  
-  // File Upload Route
-  router.post("/upload", upload.single("file"), uploadAudio);
 // Route to add a new message (including emojis)
 router.post("/addmsg", addMessage);
  
@@ -31,7 +19,22 @@ router.delete("/:messageId", deleteMessage);
 router.post("/add-call", addCallMessage);
 router.post("/get-calls", getCallMessages);
 
-  
- 
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Save files in "uploads" folder
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname); // Unique filename
+  }
+});
+const upload = multer({ storage: storage });
+
+
+router.post('/addvoice', upload.single('file'), sendVoiceMessage);
+
+// Get voice messages between two users
+router.get('/:from/:to', getVoiceMessages);
+
 module.exports = router;
  

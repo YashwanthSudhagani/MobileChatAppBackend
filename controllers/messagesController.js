@@ -1,8 +1,7 @@
 const Messages = require("../models/messagesModel");
 const mongoose = require("mongoose");
-// const path = require("path");
-const chatURL = 'https://mobilechatappbackend.onrender.com/api';
- 
+const VoiceMessage = require('../models/VoiceMessage');
+
  
  
 module.exports.addMessage = async (req, res) => {
@@ -33,23 +32,22 @@ module.exports.addMessage = async (req, res) => {
 module.exports.getMessages = async (req, res) => {
   try {
     const { from, to } = req.body;
- 
+
     const messages = await Messages.find({
       users: { $all: [from, to] },
-    }).sort({ updatedAt: 1 });
- 
-    const formattedMessages = messages.map((msg) => ({
-      _id: msg._id, // Include the message ID
+    }).sort({ createdAt: 1 });
+
+    return res.json(messages.map(msg => ({
       fromSelf: msg.sender.toString() === from,
-      message: msg.message.text,
-    }));
- 
-    res.json(formattedMessages);
+      message: msg.message.text || msg.message.audio, // Send either text or audio
+      type: msg.message.audio ? "audio" : "text", // Identify type
+    })));
   } catch (error) {
-    console.error("Error fetching messages:", error);
-    res.status(500).json({ msg: "Internal Server Error" });
+    console.error("Fetch messages error:", error);
+    return res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
  
 
 // Store a call log message
@@ -191,10 +189,64 @@ module.exports.deleteMessage = async (req, res) => {
   }
 };
 
- module.exports.uploadAudio = (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "No file uploaded" });
+module.exports.uploadAudio = (req, res) => {
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).send('No file uploaded');
   }
 
-  res.json({ audioUrl: `${chatURL}/uploads/${req.file.filename}` });
+  // Generate a URL for the uploaded file
+  const audioUrl = `http://localhost:5000/api/messages/upload-audio/${file.filename}`;
+
+  res.json({ audioUrl });
+};
+
+
+// Handle voice message upload
+module.exports.sendVoiceMessage = async (req, res) => {
+  try {
+    const { from, to } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ msg: 'Audio file is required' });
+    }
+
+    const audioUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+    const newVoiceMessage = new VoiceMessage({
+      sender: from,
+      receiver: to,
+      audioUrl,
+    });
+
+    await newVoiceMessage.save(); 
+
+    res.status(201).json({ audioUrl });
+  } catch (error) {
+    console.error('Error saving voice message:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+module.exports.getVoiceMessages = async (req, res) => {
+  try {
+    const { from, to } = req.params;
+
+    const messages = await VoiceMessage.find({
+      $or: [
+        { sender: from, receiver: to },
+        { sender: to, receiver: from },
+      ],
+    })
+      .sort({ createdAt: 1 })
+      .populate("sender", "username") // ✅ Populate sender's username
+      .populate("receiver", "username"); // ✅ Populate receiver's username
+
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("Error fetching voice messages:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
